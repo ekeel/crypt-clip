@@ -2,8 +2,11 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
+	"path"
 	"time"
 
 	"github.com/atotto/clipboard"
@@ -22,8 +25,38 @@ func main() {
 		os.Exit(1)
 	}
 
+	var key string
+	var msg string
+
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if keyPtr == nil || len(*keyPtr) <= 0 {
+		tmpKey, err := ioutil.ReadFile(path.Join(usr.HomeDir, ".keys/clipcrypt.key"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		key = string(tmpKey)
+	} else {
+		key = *keyPtr
+	}
+
+	if msgPtr == nil || len(*msgPtr) <= 0 {
+		tmpMsg, err := clipboard.ReadAll()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		msg = tmpMsg
+	} else {
+		msg = *msgPtr
+	}
+
 	if *encryptPtr {
-		out, err := encrypt([]byte(*keyPtr), *msgPtr)
+		out, err := encrypt([]byte(key), msg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -52,7 +85,7 @@ func main() {
 			os.Exit(1)
 		}
 	} else if *decryptPtr {
-		out, err := decrypt([]byte(*keyPtr), *msgPtr)
+		out, err := decrypt([]byte(key), msg)
 		if err != nil {
 			log.Fatal(err)
 		}
